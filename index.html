@@ -1,0 +1,209 @@
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ReferenceLine, ResponsiveContainer } from 'recharts';
+
+export default function QuadraticSolver() {
+  const [a, setA] = useState(1);
+  const [b, setB] = useState(-3);
+  const [c, setC] = useState(2);
+  const [solutions, setSolutions] = useState(null);
+  const [chartData, setChartData] = useState([]);
+
+  useEffect(() => {
+    calculateSolutions();
+  }, [a, b, c]);
+
+  const calculateSolutions = () => {
+    if (a === 0) {
+      setSolutions({ type: 'not-quadratic', message: 'Il coefficiente a non può essere 0' });
+      return;
+    }
+
+    const discriminant = b * b - 4 * a * c;
+    
+    if (discriminant > 0) {
+      const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+      const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+      setSolutions({
+        type: 'two-real',
+        x1: x1.toFixed(4),
+        x2: x2.toFixed(4),
+        discriminant: discriminant.toFixed(4)
+      });
+    } else if (discriminant === 0) {
+      const x = -b / (2 * a);
+      setSolutions({
+        type: 'one-real',
+        x: x.toFixed(4),
+        discriminant: 0
+      });
+    } else {
+      const realPart = (-b / (2 * a)).toFixed(4);
+      const imagPart = (Math.sqrt(-discriminant) / (2 * a)).toFixed(4);
+      setSolutions({
+        type: 'complex',
+        realPart,
+        imagPart,
+        discriminant: discriminant.toFixed(4)
+      });
+    }
+
+    generateChartData();
+  };
+
+  const generateChartData = () => {
+    if (a === 0) return;
+
+    const vertex_x = -b / (2 * a);
+    const range = Math.max(10, Math.abs(vertex_x) * 2);
+    const start = vertex_x - range;
+    const end = vertex_x + range;
+    const step = (end - start) / 100;
+
+    const data = [];
+    for (let x = start; x <= end; x += step) {
+      const y = a * x * x + b * x + c;
+      data.push({ x: parseFloat(x.toFixed(2)), y: parseFloat(y.toFixed(2)) });
+    }
+    setChartData(data);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-2 text-indigo-900">
+          Risolutore di Equazioni di Secondo Grado
+        </h1>
+        <p className="text-center text-gray-600 mb-8">ax² + bx + c = 0</p>
+
+        <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+          <h2 className="text-2xl font-semibold mb-6 text-indigo-800">Inserisci i coefficienti</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Coefficiente a
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={a}
+                onChange={(e) => setA(parseFloat(e.target.value) || 0)}
+                className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Coefficiente b
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={b}
+                onChange={(e) => setB(parseFloat(e.target.value) || 0)}
+                className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Coefficiente c
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={c}
+                onChange={(e) => setC(parseFloat(e.target.value) || 0)}
+                className="w-full px-4 py-2 border-2 border-indigo-200 rounded-lg focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="bg-indigo-50 rounded-lg p-6 mb-6">
+            <h3 className="text-xl font-semibold mb-4 text-indigo-900">Equazione:</h3>
+            <p className="text-2xl text-center font-mono text-indigo-700">
+              {a}x² {b >= 0 ? '+' : ''} {b}x {c >= 0 ? '+' : ''} {c} = 0
+            </p>
+          </div>
+
+          {solutions && (
+            <div className="bg-green-50 rounded-lg p-6">
+              <h3 className="text-xl font-semibold mb-4 text-green-900">Soluzioni:</h3>
+              
+              {solutions.type === 'not-quadratic' && (
+                <p className="text-red-600 font-medium">{solutions.message}</p>
+              )}
+              
+              {solutions.type === 'two-real' && (
+                <div>
+                  <p className="mb-2">
+                    <span className="font-semibold">Discriminante (Δ):</span> {solutions.discriminant} {'>'} 0
+                  </p>
+                  <p className="mb-2">
+                    <span className="font-semibold">Due soluzioni reali distinte:</span>
+                  </p>
+                  <p className="text-lg ml-4">x₁ = {solutions.x1}</p>
+                  <p className="text-lg ml-4">x₂ = {solutions.x2}</p>
+                </div>
+              )}
+              
+              {solutions.type === 'one-real' && (
+                <div>
+                  <p className="mb-2">
+                    <span className="font-semibold">Discriminante (Δ):</span> {solutions.discriminant}
+                  </p>
+                  <p className="mb-2">
+                    <span className="font-semibold">Una soluzione reale doppia:</span>
+                  </p>
+                  <p className="text-lg ml-4">x = {solutions.x}</p>
+                </div>
+              )}
+              
+              {solutions.type === 'complex' && (
+                <div>
+                  <p className="mb-2">
+                    <span className="font-semibold">Discriminante (Δ):</span> {solutions.discriminant} {'<'} 0
+                  </p>
+                  <p className="mb-2">
+                    <span className="font-semibold">Due soluzioni complesse coniugate:</span>
+                  </p>
+                  <p className="text-lg ml-4">x₁ = {solutions.realPart} + {solutions.imagPart}i</p>
+                  <p className="text-lg ml-4">x₂ = {solutions.realPart} - {solutions.imagPart}i</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {a !== 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <h2 className="text-2xl font-semibold mb-6 text-indigo-800">Grafico della Parabola</h2>
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis 
+                  dataKey="x" 
+                  label={{ value: 'x', position: 'insideBottomRight', offset: -5 }}
+                  stroke="#666"
+                />
+                <YAxis 
+                  label={{ value: 'y', angle: -90, position: 'insideLeft' }}
+                  stroke="#666"
+                />
+                <ReferenceLine y={0} stroke="#999" strokeWidth={2} />
+                <ReferenceLine x={0} stroke="#999" strokeWidth={2} />
+                <Line 
+                  type="monotone" 
+                  dataKey="y" 
+                  stroke="#4f46e5" 
+                  strokeWidth={3}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
